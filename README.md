@@ -1,7 +1,6 @@
 
 
 Polynomial Constant Term Calculator
-This C++ program calculates the constant term of a polynomial using Lagrange interpolation. It reads input in JSON format, decodes the values, and computes the constant term.
 
 Usage
 Compile the Program
