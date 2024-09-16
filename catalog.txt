@@ -1,0 +1,83 @@
+#include <iostream>
+#include <string>
+#include <vector>
+#include <cctype>
+#include <nlohmann/json.hpp>
+
+using json = nlohmann::json;
+
+// Convert a string from a given base to a decimal integer
+int convertToDecimal(const std::string& value, int base) {
+    int decimalValue = 0;
+    int power = 1;
+
+    // Process each character from right to left
+    for (int i = value.size() - 1; i >= 0; --i) {
+        char digit = value[i];
+        int numericValue = std::isdigit(digit) ? (digit - '0') : (digit - 'A' + 10);
+        decimalValue += numericValue * power;
+        power *= base;
+    }
+
+    return decimalValue;
+}
+
+// Parse JSON input and extract (x, y) points
+std::vector<std::pair<int, int>> extractPoints(const json& data) {
+    std::vector<std::pair<int, int>> points;
+
+    for (auto& element : data.items()) {
+        std::string key = element.key();
+        if (std::isdigit(key[0])) { // Ensure the key is numeric
+            int x = std::stoi(key);
+            int base = std::stoi(element.value()["base"]);
+            std::string encodedY = element.value()["value"];
+            int y = convertToDecimal(encodedY, base);
+            points.emplace_back(x, y);
+        }
+    }
+
+    return points;
+}
+
+// Calculate the polynomial value at a specific x using Lagrange interpolation
+double calculateConstantTerm(const std::vector<std::pair<int, int>>& points, int x_value = 0) {
+    double result = 0.0;
+    int numPoints = points.size();
+
+    for (int i = 0; i < numPoints; ++i) {
+        double term = points[i].second; // yi
+        for (int j = 0; j < numPoints; ++j) {
+            if (i != j) {
+                term *= static_cast<double>(x_value - points[j].first) / (points[i].first - points[j].first);
+            }
+        }
+        result += term;
+    }
+
+    return result;
+}
+
+int main() {
+    // Read JSON input from the user
+    std::cout << "Enter JSON input: " << std::endl;
+    std::string jsonString;
+    std::getline(std::cin, jsonString);
+
+    // Parse JSON data
+    json inputData;
+    try {
+        inputData = json::parse(jsonString);
+    } catch (const json::parse_error& e) {
+        std::cerr << "JSON parse error: " << e.what() << std::endl;
+        return 1;
+    }
+
+    // Extract points and compute the constant term
+    auto points = extractPoints(inputData);
+    double constantTerm = calculateConstantTerm(points);
+
+    // Display the constant term
+    std::cout << "The constant term (c) is: " << constantTerm << std::endl;
+    return 0;
+}
